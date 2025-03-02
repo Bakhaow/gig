@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "ideas": true,
+    ".vscode": true
+  },
+  "hide-files.files": ["ideas", ".vscode"],
+  "discord.enabled": true,
+  "cSpell.words": ["createoffer", "offerlist", "signup"]
+}
