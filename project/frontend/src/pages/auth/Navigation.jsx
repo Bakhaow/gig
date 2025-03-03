@@ -4,6 +4,7 @@ import {
   AiOutlineLogin,
   AiOutlineUserAdd,
   AiFillBook,
+  AiFillMessage,
 } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -58,6 +59,14 @@ function Navigation() {
             <span className="">OFFERS</span>{" "}
           </div>
         </Link>
+        <Link to="/messages" className="flex relative">
+          <div className="flex items-center transition-transform transform hover:translate-y-[-.5vh] hover:text-yellow-500 font-bold">
+            <AiFillMessage className="mr-2" size={26} />
+            <span className="">
+              MESSAGES {unreadCount > 0 && <span>({unreadCount})</span>}
+            </span>{" "}
+          </div>
+        </Link>
       </div>
 
       <div className="relative">
@@ -88,7 +97,7 @@ function Navigation() {
 
         {dropdownOpen && userInfo && (
           <ul
-            className={`fixed right-0 mt-[7vh] space-y-[1rem] bg-[#1A1A1A] text-white text-center px-4 py-2 font-semibold ${
+            className={`fixed right-0 mt-[2vh] space-y-[1rem] bg-[#1A1A1A] text-white text-center px-4 py-2 font-semibold ${
               !userInfo.isAdmin ? "mt-[20vh]" : "mt-[2vh]"
             } `}
           >
@@ -98,6 +107,7 @@ function Navigation() {
                   <Link
                     to="/admin/dashboard"
                     className="block px-4 py-2 hover:text-yellow-500"
+                    onClick={() => setDropdownOpen(false)}
                   >
                     Dashboard
                   </Link>
@@ -106,6 +116,7 @@ function Navigation() {
                   <Link
                     to="/admin/userlist"
                     className="block px-4 py-2 hover:text-yellow-500"
+                    onClick={() => setDropdownOpen(false)}
                   >
                     Users
                   </Link>
@@ -117,13 +128,17 @@ function Navigation() {
               <Link
                 to="/profile"
                 className="block px-4 py-2 hover:text-yellow-500"
+                onClick={() => setDropdownOpen(false)}
               >
                 Profile
               </Link>
             </li>
             <li>
               <button
-                onClick={logoutHandler}
+                onClick={() => {
+                  logoutHandler();
+                  setDropdownOpen(false);
+                }}
                 className="block w-full px-4 py-2 hover:text-yellow-500"
               >
                 Logout

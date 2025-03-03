@@ -13,6 +13,7 @@ function AdminMenu() {
         className={`${
           isOpen ? "top-[8vh] right-2" : "top-[10vh] right-7"
         } bg-[#151515] p-2 fixed rounded-lg`}
+        style={{ zIndex: 1000 }}
         onClick={toggle}
       >
         {isOpen ? (

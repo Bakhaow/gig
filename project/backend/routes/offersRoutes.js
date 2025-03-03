@@ -10,16 +10,13 @@ import {
 
 const router = express.Router();
 
-router
-  .route("/")
-  .post(authenticate, createOffer)
-  .get(authenticate, getAllOffers);
+router.route("/").post(authenticate, createOffer).get(getAllOffers);
 
-router.route("/filtered").get(authenticate, getFilteredOffers);
+router.route("/filtered").get(getFilteredOffers);
 
 router
   .route("/:id")
-  .get(authenticate, getOfferById)
+  .get(getOfferById)
   .delete(authenticate, authorizeAdmin, deleteOffer);
 
 export default router;
