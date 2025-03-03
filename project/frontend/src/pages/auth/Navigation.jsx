@@ -62,9 +62,7 @@ function Navigation() {
         <Link to="/messages" className="flex relative">
           <div className="flex items-center transition-transform transform hover:translate-y-[-.5vh] hover:text-yellow-500 font-bold">
             <AiFillMessage className="mr-2" size={26} />
-            <span className="">
-              MESSAGES {unreadCount > 0 && <span>({unreadCount})</span>}
-            </span>{" "}
+            <span className="">MESSAGES</span>{" "}
           </div>
         </Link>
       </div>
