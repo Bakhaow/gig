@@ -6,6 +6,9 @@ import {
   getOfferById,
   deleteOffer,
   getFilteredOffers,
+  applyToOffer,
+  getOfferApplications,
+  updateApplicationStatus,
 } from "../controllers/offerController.js";
 
 const router = express.Router();
@@ -18,5 +21,15 @@ router
   .route("/:id")
   .get(getOfferById)
   .delete(authenticate, authorizeAdmin, deleteOffer);
+
+router.post("/:id/apply", authenticate, applyToOffer);
+
+router.get("/:id/applications", authenticate, getOfferApplications);
+
+router.put(
+  "/:offerId/applications/:applicationId",
+  authenticate,
+  updateApplicationStatus
+);
 
 export default router;

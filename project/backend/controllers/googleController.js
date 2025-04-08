@@ -28,6 +28,8 @@ export const googleAuth = async (req, res) => {
 
     const payload = ticket.getPayload();
 
+    const googleProfileImage = payload.picture || "";
+
     const sanitizedEmail = validator.escape(payload.email);
     const sanitizedName = validator.escape(payload.name);
 
@@ -39,12 +41,18 @@ export const googleAuth = async (req, res) => {
         email: sanitizedEmail,
         isVerified: true,
         googleId: payload.sub,
+        profileImage: googleProfileImage,
       });
 
       try {
         await user.save();
       } catch (err) {
         return res.status(500).json({ error: "Failed to create user" });
+      }
+    } else {
+      if (!user.profileImage && googleProfileImage) {
+        user.profileImage = googleProfileImage;
+        await user.save();
       }
     }
 

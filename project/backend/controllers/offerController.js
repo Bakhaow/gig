@@ -216,10 +216,152 @@ const deleteOffer = asyncHandler(async (req, res) => {
   }
 });
 
+const applyToOffer = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { message, proposedBudget } = req.body;
+  const providerId = req.user._id;
+
+  const offer = await Offer.findById(id);
+
+  if (req.user.role !== "provider") {
+    return res.status(403).json({
+      success: false,
+      message: "Only providers can apply to offers",
+    });
+  }
+
+  // Check if offer is locked
+  if (offer.isLocked) {
+    return res.status(400).json({
+      success: false,
+      message: "This offer is no longer accepting applications",
+    });
+  }
+
+  // Check if already applied
+  if (offer.appliedProviders.includes(providerId)) {
+    return res.status(400).json({
+      success: false,
+      message: "You've already applied to this offer",
+    });
+  }
+
+  offer.appliedProviders.push(providerId);
+  offer.applicationMessages.push({
+    provider: providerId,
+    message: validator.escape(message),
+    proposedBudget,
+    status: "pending",
+  });
+
+  await offer.save();
+
+  res.status(201).json({
+    success: true,
+    message: "Application submitted",
+  });
+});
+
+const getOfferApplications = asyncHandler(async (req, res) => {
+  const offer = await Offer.findById(req.params.id).populate(
+    "applicationMessages.provider",
+    "username rating profileImage"
+  );
+
+  // Authorization check
+  if (req.user.role === "client") {
+    if (offer.client.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view these applications",
+      });
+    }
+  } else if (req.user.role === "provider") {
+    // Filter only the provider's own application
+    offer.applicationMessages = offer.applicationMessages.filter(
+      (app) => app.provider._id.toString() === req.user._id.toString()
+    );
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: "Not authorized to view applications",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: offer.applicationMessages,
+  });
+});
+
+const updateApplicationStatus = asyncHandler(async (req, res) => {
+  const { offerId, applicationId } = req.params;
+  const { status } = req.body;
+
+  const offer = await Offer.findById(offerId);
+
+  if (offer.isLocked) {
+    return res.status(400).json({
+      success: false,
+      message: "Offer already has an accepted provider",
+    });
+  }
+
+  // Add null checks
+  if (!offer) {
+    return res.status(404).json({
+      success: false,
+      message: "Offer not found",
+    });
+  }
+
+  // Verify ownership using client reference
+  if (offer.client.toString() !== req.user._id.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: "Not authorized to modify this application",
+    });
+  }
+
+  const application = offer.applicationMessages.id(applicationId);
+  if (!application) {
+    return res.status(404).json({
+      success: false,
+      message: "Application not found",
+    });
+  }
+
+  // Update application and offer status
+  if (status === "accepted") {
+    offer.status = "inProgress";
+    offer.selectedProvider = application.provider;
+    offer.isLocked = true;
+
+    // Reject all other pending applications
+    const acceptedApplicationId = application._id;
+    offer.applicationMessages.forEach((app) => {
+      if (
+        app._id.toString() !== acceptedApplicationId.toString() &&
+        app.status === "pending"
+      ) {
+        app.status = "rejected";
+      }
+    });
+  }
+
+  application.status = status;
+  await offer.save();
+
+  res.status(200).json({ success: true });
+});
+
 export {
   createOffer,
   getAllOffers,
   getOfferById,
   getFilteredOffers,
   deleteOffer,
+  applyToOffer,
+  getOfferApplications,
+  updateApplicationStatus,
 };

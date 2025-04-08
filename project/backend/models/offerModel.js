@@ -75,15 +75,15 @@ const OfferSchema = new mongoose.Schema({
   ],
   applicationMessages: [
     {
-      provider: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
+      provider: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       message: String,
-      createdAt: {
-        type: Date,
-        default: Date.now,
+      proposedBudget: Number,
+      status: {
+        type: String,
+        enum: ["pending", "accepted", "rejected"],
+        default: "pending",
       },
+      createdAt: { type: Date, default: Date.now },
     },
   ],
   paymentStatus: {

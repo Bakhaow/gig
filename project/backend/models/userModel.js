@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import validator from "validator";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -15,7 +16,14 @@ const UserSchema = new mongoose.Schema(
       enum: ["customer", "provider", "admin"],
       default: "customer",
     },
-    profileImage: { type: String, default: "" },
+    profileImage: {
+      type: String,
+      default: "",
+      validate: {
+        validator: (v) => validator.isURL(v) || v === "",
+        message: "Profile image must be a valid URL",
+      },
+    },
     isVerified: { type: Boolean, default: false },
     location: { type: String, default: "" },
     skills: { type: [String], default: [] },
@@ -28,7 +36,7 @@ const UserSchema = new mongoose.Schema(
     },
     balance: { type: Number, default: 0 },
     isAdmin: { type: Boolean, default: false },
-    googleId: { type: String, default: "" },
+    googleId: { type: String, default: null },
   },
   { timestamps: true }
 );

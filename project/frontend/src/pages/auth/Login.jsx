@@ -10,7 +10,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import validator from "validator";
 
 function Login() {
-  const recaptchaRef = useRef();
+  const recaptchaRef = useRef(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,6 +74,8 @@ function Login() {
     } catch (err) {
       toast.error(err.data?.message || err.error || "Login failed");
     }
+
+    recaptchaRef.current.reset();
   };
 
   return (
@@ -132,6 +134,7 @@ function Login() {
             <ReCAPTCHA
               ref={recaptchaRef}
               sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+              size="invisible"
               className="mt-4"
             />
 

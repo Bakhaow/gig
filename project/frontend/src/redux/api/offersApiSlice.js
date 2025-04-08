@@ -37,6 +37,26 @@ export const offersApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
       }),
     }),
+    applyToOffer: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `${OFFER_URL}/${id}/apply`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Offer"],
+    }),
+    getOfferApplications: builder.query({
+      query: (id) => `${OFFER_URL}/${id}/applications`,
+      providesTags: ["Application"],
+    }),
+    updateApplicationStatus: builder.mutation({
+      query: ({ offerId, applicationId, status }) => ({
+        url: `${OFFER_URL}/${offerId}/applications/${applicationId}`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: ["Application"],
+    }),
   }),
 });
 
@@ -46,4 +66,7 @@ export const {
   useGetFilteredOffersQuery,
   useGetOfferByIdQuery,
   useDeleteOfferMutation,
+  useApplyToOfferMutation,
+  useGetOfferApplicationsQuery,
+  useUpdateApplicationStatusMutation,
 } = offersApiSlice;

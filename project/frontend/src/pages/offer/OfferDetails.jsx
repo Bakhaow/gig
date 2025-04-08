@@ -1,11 +1,26 @@
 import { useParams } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { useGetOfferByIdQuery } from "../../redux/api/offersApiSlice";
+import {
+  useGetOfferByIdQuery,
+  useApplyToOfferMutation,
+  useGetOfferApplicationsQuery,
+  useUpdateApplicationStatusMutation,
+} from "../../redux/api/offersApiSlice";
 import Loader from "../../components/Loader";
+import { useState } from "react";
+import ApplicationForm from "../../components/offers/ApplicationForm";
+import ApplicationCard from "../../components/offers/ApplicationCard";
+import { useSelector } from "react-redux";
 
 const OfferDetails = () => {
   const { id } = useParams();
   const { data: offerData, isLoading, isError } = useGetOfferByIdQuery(id);
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const { data: applicationsData, refetch } = useGetOfferApplicationsQuery(id);
+  const [applyToOffer] = useApplyToOfferMutation();
+  // eslint-disable-next-line no-unused-vars
+  const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
+  const { userInfo } = useSelector((state) => state.auth);
 
   if (isLoading) return <Loader />;
   if (isError) return <div>Error loading offer details</div>;
@@ -97,6 +112,83 @@ const OfferDetails = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {offer.isLocked && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <i className="fas fa-lock text-yellow-500 text-xl"></i>
+            <div>
+              <h3 className="font-semibold text-yellow-800">Offer Locked</h3>
+              <p className="text-yellow-700 text-sm">
+                This offer has selected a provider and is no longer accepting
+                applications
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Application Section */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Applications</h2>
+          {userInfo?.role === "provider" &&
+            offer.status === "open" &&
+            !offer.isLocked && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-blue-800 mb-2">
+                  This offer is accepting applications until{" "}
+                  {new Date(offer.expirationTime).toLocaleDateString()}
+                </p>
+                <button
+                  onClick={() => setShowApplyForm(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <i className="fas fa-paper-plane"></i>
+                  Submit Your Proposal
+                </button>
+              </div>
+            )}
+        </div>
+
+        {showApplyForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+            <ApplicationForm
+              offerId={id}
+              onClose={() => setShowApplyForm(false)}
+              onSubmit={(data) => applyToOffer({ id, data })}
+            />
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {applicationsData?.data?.length === 0 ? (
+            <div className="text-gray-500 p-4 text-center">
+              {userInfo?.role === "client"
+                ? "No applications received yet"
+                : "You haven't applied to this offer"}
+            </div>
+          ) : (
+            applicationsData?.data?.map((application) => {
+              if (
+                userInfo?.role === "provider" &&
+                application.provider._id !== userInfo?._id
+              ) {
+                return null;
+              }
+              return (
+                <ApplicationCard
+                  key={application._id}
+                  offerId={id}
+                  application={application}
+                  isOwner={userInfo?._id === offer.client}
+                  onStatusUpdate={() => refetch()}
+                />
+              );
+            })
+          )}
         </div>
       </div>
     </div>
