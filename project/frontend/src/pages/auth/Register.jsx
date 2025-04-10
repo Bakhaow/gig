@@ -10,6 +10,9 @@ import ReCAPTCHA from "react-google-recaptcha";
 import validator from "validator";
 
 function Register() {
+  const recaptchaRef = useRef();
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,8 +33,6 @@ function Register() {
       navigate(redirect);
     }
   }, [navigate, redirect, userInfo]);
-
-  const recaptchaRef = useRef();
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -56,12 +57,6 @@ function Register() {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    const recaptchaToken = await recaptchaRef.current.executeAsync();
-    if (!recaptchaToken) {
-      toast.error("Completez le reCAPTCHA");
-      return;
-    }
-
     // Sanitize inputs
     const sanitizedUsername = validator.escape(username.trim());
     const sanitizedEmail = validator.escape(email.trim());
@@ -71,22 +66,35 @@ function Register() {
       return;
     }
 
+    if (!recaptchaToken) {
+      toast.error("Please complete the reCAPTCHA verification");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
-    } else {
-      try {
-        const { data } = await register({
-          username: sanitizedUsername,
-          email: sanitizedEmail,
-          password,
-          recaptchaToken,
-        });
-        dispatch(setCredentials(data));
-        navigate(redirect);
-        toast.success("User successfully created");
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
+      return;
+    }
+
+    try {
+      const res = await register({
+        username: sanitizedUsername,
+        email: sanitizedEmail,
+        password,
+        recaptchaToken,
+      });
+
+      if (res.error) {
+        throw new Error(res.error.data.message || "Registration failed");
       }
+
+      dispatch(setCredentials(res.data));
+      navigate(redirect);
+      toast.success("User successfully created");
+    } catch (err) {
+      toast.error(err.message || "An error occurred during registration");
+      recaptchaRef.current.reset();
+      setRecaptchaToken(null);
     }
   };
 
@@ -99,7 +107,7 @@ function Register() {
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => toast.error("Échec Google")}
+              onError={() => toast.error("Google registration failed")}
               theme="filled_blue"
               text="signup_with"
             />
@@ -121,6 +129,7 @@ function Register() {
               placeholder="Enter name"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
           <div className="my-[2rem]">
@@ -131,12 +140,13 @@ function Register() {
               Email Address
             </label>
             <input
-              type="text"
+              type="email"
               id="email"
               className="mt-1 p-2 border rounded w-full"
               placeholder="Enter email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <div className="my-[2rem]">
@@ -153,6 +163,7 @@ function Register() {
               placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
           <div className="my-[2rem]">
@@ -169,12 +180,14 @@ function Register() {
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              required
             />
           </div>
 
           <ReCAPTCHA
             ref={recaptchaRef}
             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            onChange={(token) => setRecaptchaToken(token)}
             className="mt-4"
           />
 

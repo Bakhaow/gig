@@ -11,6 +11,7 @@ import validator from "validator";
 
 function Login() {
   const recaptchaRef = useRef(null);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,34 +49,36 @@ function Login() {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    const recaptchaToken = await recaptchaRef.current.executeAsync();
-    if (!recaptchaToken) {
-      toast.error("Please complete the reCAPTCHA");
-      return;
-    }
-
-    // Sanitize email
     const sanitizedEmail = validator.escape(email.trim());
     if (!validator.isEmail(sanitizedEmail)) {
       toast.error("Invalid email format");
       return;
     }
 
+    if (!recaptchaToken) {
+      toast.error("Please complete the reCAPTCHA verification");
+      return;
+    }
+
     try {
-      const { data } = await login({
+      const res = await login({
         email: sanitizedEmail,
         password,
         recaptchaToken,
       });
 
-      dispatch(setCredentials(data));
+      if (res.error) {
+        throw new Error(res.error.data.message || "Login failed");
+      }
+
+      dispatch(setCredentials(res.data));
       navigate(redirect);
       toast.success("Login successful");
     } catch (err) {
       toast.error(err.data?.message || err.error || "Login failed");
+      recaptchaRef.current.reset();
+      setRecaptchaToken(null);
     }
-
-    recaptchaRef.current.reset();
   };
 
   return (
@@ -112,6 +115,7 @@ function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter email"
+                required
               />
             </div>
 
@@ -129,12 +133,14 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
+                required
               />
             </div>
+
             <ReCAPTCHA
               ref={recaptchaRef}
               sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              size="invisible"
+              onChange={(token) => setRecaptchaToken(token)}
               className="mt-4"
             />
 
